@@ -55,6 +55,23 @@ const csrfProtection = csrf({
 app.use(express.json());
 app.use(auth);
 
+//log requests to the console
+app.use((req, res, next) => {
+  //get time of request
+  const date = new Date();
+  //log the request method and path
+  console.log(`\n${date.toLocaleString()} - ${req.method} ${req.path}`);
+  //response output
+  res.on("finish", () => {
+    //get time of response
+    const date = new Date();
+    //log the response status code and message
+    console.log(`${date.toLocaleString()} - ${res.statusCode} ${res.statusMessage}`);
+  });
+  
+  next();
+});
+
 // Database connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
