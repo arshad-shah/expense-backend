@@ -72,6 +72,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date(),
+    uptime: process.uptime()
+  });
+});
+
+// Auth endpoints with rate limiting and CSRF protection
+app.post('/api/auth/login', authLimiter, csrfProtection, require('./routes/auth').login);
+app.post('/api/auth/register', authLimiter, csrfProtection, require('./routes/auth').register);
+
+// Refresh token endpoint
+app.post('/api/auth/refresh-token', csrfProtection, require('./routes/auth').refreshToken);
+
+
 // Database connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -96,23 +113,6 @@ app.use('/graphql',
     }
   }))
 );
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date(),
-    uptime: process.uptime()
-  });
-});
-
-// Auth endpoints with rate limiting and CSRF protection
-app.post('/api/auth/login', authLimiter, csrfProtection, require('./routes/auth').login);
-app.post('/api/auth/register', authLimiter, csrfProtection, require('./routes/auth').register);
-
-// Refresh token endpoint
-app.post('/api/auth/refresh-token', csrfProtection, require('./routes/auth').refreshToken);
-
 // Error handler
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
