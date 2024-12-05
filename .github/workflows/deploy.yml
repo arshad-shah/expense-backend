@@ -16,13 +16,16 @@ jobs:
         with:
           key: ${{ secrets.DO_SSH_KEY }}
           known_hosts: 'placeholder'
+          if_key_exists: replace
           
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.DO_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to DigitalOcean
+        env:
+          DO_HOST: ${{ secrets.DO_HOST }}
         run: |
-          ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${DO_HOST} '
             cd /opt/expense-tracker
             git pull origin master
             docker-compose down
@@ -41,4 +44,4 @@ jobs:
               echo "Deployment failed!"
               exit 1
             fi
-          ENDSSH
+          '
