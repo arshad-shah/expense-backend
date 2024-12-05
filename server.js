@@ -13,6 +13,8 @@ require('dotenv').config();
 
 const app = express();
 
+app.set('trust proxy', true);
+
 // Middleware order is important!
 app.use(express.json());
 app.use(cookieParser());
