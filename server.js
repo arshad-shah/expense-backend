@@ -58,12 +58,34 @@ const csrfProtection = csrf({
 // Auth middleware
 app.use(auth);
 
-// Request logging
+// Enhanced request logging
 app.use((req, res, next) => {
   const date = new Date();
-  console.log(`\n${date.toLocaleString()} - ${req.method} ${req.path}`);
+  console.log('\n=== Request Details ===');
+  console.log(`Timestamp: ${date.toLocaleString()}`);
+  console.log(`Method: ${req.method}`);
+  console.log(`Path: ${req.path}`);
+  console.log(`Origin: ${req.headers.origin}`);
+  console.log('\nHeaders:');
+  console.log(JSON.stringify(req.headers, null, 2));
+  console.log('\nCookies:');
+  console.log(JSON.stringify(req.cookies, null, 2));
+  
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('\nBody:');
+    // Mask sensitive data in password fields
+    const sanitizedBody = JSON.parse(JSON.stringify(req.body));
+    if (sanitizedBody.password) sanitizedBody.password = '[MASKED]';
+    console.log(JSON.stringify(sanitizedBody, null, 2));
+  }
+
+  // Log response
   res.on("finish", () => {
-    console.log(`${date.toLocaleString()} - ${res.statusCode} ${res.statusMessage}`);
+    console.log('\n=== Response Details ===');
+    console.log(`Timestamp: ${date.toLocaleString()}`);
+    console.log(`Status: ${res.statusCode} ${res.statusMessage}`);
+    console.log(`Headers:`, JSON.stringify(res.getHeaders(), null, 2));
+    console.log('==================\n');
   });
   next();
 });
