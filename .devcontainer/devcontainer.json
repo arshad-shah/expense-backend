@@ -1,0 +1,19 @@
+{
+  "name": "Node.js & MongoDB",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  "features": {
+    "ghcr.io/devcontainers/features/mongodb:1": {
+      "version": "latest"
+    }
+  },
+  "forwardPorts": [4000],
+  "postCreateCommand": "npm install -g pnpm && pnpm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mongodb.mongodb-vscode",
+        "GraphQL.vscode-graphql"
+      ]
+    }
+  }
+}
