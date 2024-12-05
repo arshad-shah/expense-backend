@@ -1,4 +1,6 @@
 // routes/auth.js
+const express = require('express');
+const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -21,7 +23,8 @@ const validatePassword = (password) => {
   }
 };
 
-exports.login = async (req, res) => {
+// Login route
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -39,22 +42,20 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' } // Short-lived access token
+      { expiresIn: '15m' }
     );
 
     const refreshToken = generateRefreshToken();
     
-    // Save refresh token to user document with expiry
     user.refreshToken = refreshToken;
-    user.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    user.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await user.save();
 
-    // Set refresh token in HTTP-only cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     res.json({
@@ -70,13 +71,13 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
-};
+});
 
-exports.register = async (req, res) => {
+// Register route
+router.post('/register', async (req, res) => {
   try {
     const { email, password, firstName, lastName, currency } = req.body;
 
-    // Validate password strength
     validatePassword(password);
 
     const existingUser = await User.findOne({ email });
@@ -84,7 +85,6 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Generate salt and hash password
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password + salt, 12);
 
@@ -131,9 +131,10 @@ exports.register = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
-};
+});
 
-exports.refreshToken = async (req, res) => {
+// Refresh token route
+router.post('/refresh-token', async (req, res) => {
   try {
     const { refreshToken } = req.cookies;
     
@@ -150,7 +151,6 @@ exports.refreshToken = async (req, res) => {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    // Generate new tokens
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -159,12 +159,10 @@ exports.refreshToken = async (req, res) => {
 
     const newRefreshToken = generateRefreshToken();
     
-    // Update refresh token
     user.refreshToken = newRefreshToken;
     user.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await user.save();
 
-    // Set new refresh token in cookie
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -176,4 +174,6 @@ exports.refreshToken = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
-};
+});
+
+module.exports = router;
