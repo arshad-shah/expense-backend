@@ -13,7 +13,7 @@ require('dotenv').config();
 
 const app = express();
 
-app.set('trust proxy', true);
+app.set('trust proxy', 2);
 
 // Middleware order is important!
 app.use(express.json());
@@ -50,7 +50,8 @@ const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: 'strict',
+    domain: '.arshadshah.com'
   }
 });
 
