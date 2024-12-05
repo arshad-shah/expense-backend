@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  salt: {
+    type: String,
+    required: true
+  },
   firstName: {
     type: String,
     required: true,
@@ -25,6 +29,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     default: 'USD'
+  },
+  refreshToken: {
+    type: String
+  },
+  refreshTokenExpiry: {
+    type: Date
   }
 }, {
   timestamps: true

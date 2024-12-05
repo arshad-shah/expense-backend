@@ -95,7 +95,7 @@ const schema = buildSchema(`
 
   input UserInput {
     email: String!
-    password: String!
+    hashedPassword: String!
     firstName: String!
     lastName: String!
     currency: String!
