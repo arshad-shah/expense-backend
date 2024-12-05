@@ -13,6 +13,10 @@ require('dotenv').config();
 
 const app = express();
 
+// Middleware order is important!
+app.use(express.json());
+app.use(cookieParser());
+
 // Security Headers
 app.use(helmet());
 
@@ -21,9 +25,6 @@ app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true
 }));
-
-// Cookie parser for CSRF and refresh tokens
-app.use(cookieParser());
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -51,24 +52,16 @@ const csrfProtection = csrf({
   }
 });
 
-// Middleware
-app.use(express.json());
+// Auth middleware
 app.use(auth);
 
-//log requests to the console
+// Request logging
 app.use((req, res, next) => {
-  //get time of request
   const date = new Date();
-  //log the request method and path
   console.log(`\n${date.toLocaleString()} - ${req.method} ${req.path}`);
-  //response output
   res.on("finish", () => {
-    //get time of response
-    const date = new Date();
-    //log the response status code and message
     console.log(`${date.toLocaleString()} - ${res.statusCode} ${res.statusMessage}`);
   });
-  
   next();
 });
 
@@ -81,24 +74,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Auth endpoints with rate limiting and CSRF protection
-app.post('/api/auth/login', authLimiter, csrfProtection, require('./routes/auth').login);
-app.post('/api/auth/register', authLimiter, csrfProtection, require('./routes/auth').register);
-
-// Refresh token endpoint
-app.post('/api/auth/refresh-token', csrfProtection, require('./routes/auth').refreshToken);
-
-
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-
 // CSRF token endpoint
 app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
+
+// Auth routes
+const authRouter = require('./routes/auth');
+app.use('/api/auth', authLimiter, csrfProtection, authRouter);
 
 // GraphQL endpoint with CSRF protection
 app.use('/graphql', 
@@ -113,6 +96,7 @@ app.use('/graphql',
     }
   }))
 );
+
 // Error handler
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
@@ -120,7 +104,20 @@ app.use((err, req, res, next) => {
       error: 'Invalid CSRF token'
     });
   }
-  next(err);
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Something broke!'
+  });
+});
+
+// Database connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
 });
 
 const PORT = process.env.PORT || 4000;
