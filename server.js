@@ -24,7 +24,10 @@ app.use(helmet());
 
 // CORS configuration with specific origin
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: [
+      'https://local.arshadshah.com:5173',
+      'https://expense.arshadshah.com',
+    ],
   credentials: true
 }));
 
