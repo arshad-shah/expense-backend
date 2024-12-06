@@ -30,12 +30,12 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: 'Authentication failed' });
+      return res.status(200).json({ message: 'We couldn\'t find an account associated with this email address. Please check the email or create a new account.' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'Authentication failed' });
+      return res.status(200).json({ message: 'Incorrect password. Please try again.' });
     }
 
     // Generate tokens
@@ -82,7 +82,7 @@ router.post('/register', async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(200).json({ message: 'This email is already registered. Please log in instead.' });
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -139,7 +139,7 @@ router.post('/refresh-token', async (req, res) => {
     const { refreshToken } = req.cookies;
     
     if (!refreshToken) {
-      return res.status(401).json({ message: 'No refresh token provided' });
+      return res.status(401).json({ message: 'Please sign in again to continue.' });
     }
 
     const user = await User.findOne({ 
@@ -148,7 +148,7 @@ router.post('/refresh-token', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid refresh token' });
+      return res.status(401).json({ message: 'Session expired. Please sign in again.' });
     }
 
     const token = jwt.sign(
