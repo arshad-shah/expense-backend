@@ -2,13 +2,11 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    image: ${REGISTRY}/expense-api:latest
     ports:
       - "4000:4000"
-    environment:
-      - NODE_ENV=production
-      - MONGODB_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/expense-tracker?authSource=admin
-      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - .env.production
     depends_on:
       mongo:
         condition: service_healthy
@@ -27,13 +25,12 @@ services:
         max-file: "3"
 
   mongo:
-    image: mongo:6.0
+    image: mongo:latest
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     expose:
       - "27017"
     healthcheck:
@@ -44,7 +41,7 @@ services:
     restart: unless-stopped
     networks:
       - app_network
-    command: ["--auth", "--bind_ip", "localhost,mongo"]
+    command: ["--auth", "--bind_ip_all"]
     logging:
       driver: "json-file"
       options:

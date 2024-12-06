@@ -2,7 +2,7 @@ name: Deploy to DigitalOcean
 
 on:
   push:
-    branches: [ master ]
+    branches: [ logging ]
 
 jobs:
   deploy:
@@ -11,6 +11,37 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_REGISTRY_TOKEN }}
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Create env file
+        run: |
+          cat << EOF > .env.production
+          REGISTRY=${{ secrets.DO_REGISTRY }}
+          MONGO_USER=${{ secrets.MONGO_USER }}
+          MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          EOF
+          
+      - name: Build and Push Docker images
+        run: |
+          # Build API image with build args from env file
+          docker build \
+            --build-arg MONGO_USER=${{ secrets.MONGO_USER }} \
+            --build-arg MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --build-arg FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
+            -t $(echo ${{ secrets.DO_REGISTRY }})/expense-api:latest \
+            .
+          
+          docker push $(echo ${{ secrets.DO_REGISTRY }})/expense-api:latest
+
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -20,34 +51,35 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.DO_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create env file
-        run: |
-          cat << EOF > .env
-            MONGO_USER=${{ secrets.MONGO_USER }}
-            MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-          EOF
-
       - name: Copy env file to server
-        run: scp .env root@${{ secrets.DO_HOST }}:/opt/expense-tracker/.env
+        run: |
+          scp .env.production root@${{ secrets.DO_HOST }}:/opt/expense-tracker/
 
+      - name: Copy compose file to server
+        run: |
+          scp docker-compose.yml root@${{ secrets.DO_HOST }}:/opt/expense-tracker/
+          
       - name: Deploy to DigitalOcean
         run: |
           ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
+
+            echo "Changing dir to correct place..."
             cd /opt/expense-tracker
-            git pull origin master
             
-            # Set correct permissions for sensitive files
-            chmod 600 .env
-            
+            echo "Take down current system"
             # Stop and remove existing containers
-            docker-compose down
+            REGISTRY=${{ secrets.DO_REGISTRY }} MONGO_USER=${{ secrets.MONGO_USER }} MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} docker-compose down
             
-            # Build and start containers
-            docker-compose build --no-cache
-            docker-compose up -d
+            echo "pull new images"
+            # Pull latest images
+            REGISTRY=${{ secrets.DO_REGISTRY }} MONGO_USER=${{ secrets.MONGO_USER }} MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} docker-compose pull
             
-            # Clean up unused images
+            echo "start new system"
+            # Start containers with env file
+            REGISTRY=${{ secrets.DO_REGISTRY }} MONGO_USER=${{ secrets.MONGO_USER }} MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} docker-compose up -d
+            
+            echo "cleanup"
+            # Clean up
             docker system prune -f
             
             # Wait for application to be ready

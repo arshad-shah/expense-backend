@@ -11,9 +11,11 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 require('dotenv').config();
 
-const app = express();
+console.log("Setting up connection")
+const { MONGO_USER, MONGO_PASSWORD } = process.env;
 
-app.set('trust proxy', 2);
+const mongoURI = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@mongo:27017`;
+const app = express();
 
 // Middleware order is important!
 app.use(express.json());
@@ -24,7 +26,10 @@ app.use(helmet());
 
 // CORS configuration with specific origin
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: [
+      'https://local.arshadshah.com:5173',
+      'https://expense.arshadshah.com',
+    ],
   credentials: true
 }));
 
@@ -41,7 +46,7 @@ app.use(limiter);
 // Stricter rate limit for auth routes
 const authLimiter = rateLimit({
   windowMs: 60 * 5000, // 5 minutes
-  max: 5, // limit each IP to 5 login attempts per hour
+  max: 100000000000, // limit each IP to 5 login attempts per 5 minutes
   message: 'Too many login attempts, please try again later.'
 });
 
@@ -134,16 +139,15 @@ app.use((err, req, res, next) => {
     error: 'Something broke!'
   });
 });
-
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch(err => {
-  console.error('MongoDB connection error:', err);
-});
+try {
+  mongoose.connect(mongoURI).then(() => {
+    console.log('Connected to MongoDB');
+  }).catch(err => {
+    console.error('MongoDB connection error:', err);
+  });
+} catch (err) {
+  console.error('Error parsing MongoDB URI:', err);
+}
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
