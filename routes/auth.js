@@ -30,12 +30,12 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(200).json({ message: 'We couldn\'t find an account associated with this email address. Please check the email or create a new account.' });
+      return res.status(200).json({ error: 'We couldn\'t find an account associated with this email address. Please check the email or create a new account.' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
     if (!isValidPassword) {
-      return res.status(200).json({ message: 'Incorrect password. Please try again.' });
+      return res.status(200).json({ error: 'Incorrect password. Please try again.' });
     }
 
     // Generate tokens
@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -82,7 +82,7 @@ router.post('/register', async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(200).json({ message: 'This email is already registered. Please log in instead.' });
+      return res.status(200).json({ error: 'This email is already registered. Please log in instead.' });
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -129,7 +129,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -139,7 +139,7 @@ router.post('/refresh-token', async (req, res) => {
     const { refreshToken } = req.cookies;
     
     if (!refreshToken) {
-      return res.status(401).json({ message: 'Please sign in again to continue.' });
+      return res.status(200).json({ error: 'Please sign in again to continue.' });
     }
 
     const user = await User.findOne({ 
@@ -148,7 +148,7 @@ router.post('/refresh-token', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ message: 'Session expired. Please sign in again.' });
+      return res.status(200).json({ error: 'Session expired. Please sign in again.' });
     }
 
     const token = jwt.sign(
@@ -172,7 +172,7 @@ router.post('/refresh-token', async (req, res) => {
 
     res.json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
