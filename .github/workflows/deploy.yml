@@ -37,18 +37,6 @@ jobs:
           docker push $(echo $REGISTRY)/$(echo $REPOSITORY)/expense-api:$(echo $GITHUB_SHA | head -c7)
           docker push $(echo $REGISTRY)/$(echo $REPOSITORY)/expense-api:latest
 
-          # Build and push MongoDB image
-          docker build \
-            --build-arg MONGO_USER=${{ secrets.MONGO_USER }} \
-            --build-arg MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
-            -f Dockerfile.mongo \
-            -t $(echo $REGISTRY)/$(echo $REPOSITORY)/mongo:$(echo $GITHUB_SHA | head -c7) \
-            -t $(echo $REGISTRY)/$(echo $REPOSITORY)/mongo:latest \
-            .
-          
-          docker push $(echo $REGISTRY)/$(echo $REPOSITORY)/mongo:$(echo $GITHUB_SHA | head -c7)
-          docker push $(echo $REGISTRY)/$(echo $REPOSITORY)/mongo:latest
-
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
@@ -62,11 +50,15 @@ jobs:
         env:
           REGISTRY: registry.digitalocean.com
           REPOSITORY: test-apps
+          MONGO_USER: ${{ secrets.MONGO_USER }}
+          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
         run: |
           ssh root@${{ secrets.DO_HOST }} << ENDSSH
             cd /opt/expense-tracker
 
-
+             # Export environment variables
+            export MONGO_USER='${MONGO_USER}'
+            export MONGO_PASSWORD='${MONGO_PASSWORD}'
             
             # Login to DO registry
             doctl registry login --expiry-seconds 600
@@ -76,7 +68,7 @@ jobs:
             
             # Pull latest images
             docker pull $(echo $REGISTRY)/$(echo $REPOSITORY)/expense-api:latest
-            docker pull $(echo $REGISTRY)/$(echo $REPOSITORY)/mongo:latest
+            docker pull mongo:latest
             
             # Start containers
             docker-compose up -d

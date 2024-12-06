@@ -26,6 +26,9 @@ services:
     image: registry.digitalocean.com/expense-tracker/mongo:latest
     volumes:
       - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USER }}
+      - MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}
     expose:
       - "27017"
     healthcheck:
