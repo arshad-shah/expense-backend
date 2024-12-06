@@ -39,11 +39,9 @@ jobs:
             --build-arg MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
             --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
             --build-arg FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
-            -t $(echo $REGISTRY)/expense-api:$(echo $GITHUB_SHA | head -c7) \
             -t $(echo $REGISTRY)/expense-api:latest \
             .
           
-          docker push $(echo $REGISTRY)/expense-api:$(echo $GITHUB_SHA | head -c7)
           docker push $(echo $REGISTRY)/expense-api:latest
 
       - name: Install SSH Key
@@ -60,12 +58,11 @@ jobs:
           scp .env.production root@${{ secrets.DO_HOST }}:/opt/expense-tracker/
 
       - name: Deploy to DigitalOcean
+        env: 
+          DO_REGISTRY_TOKEN: ${{ secrets.DO_REGISTRY_TOKEN }}
         run: |
           ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
             cd /opt/expense-tracker
-            
-            # Login to DO registry
-            doctl registry login --expiry-seconds 600
             
             # Stop and remove existing containers
             docker-compose down
