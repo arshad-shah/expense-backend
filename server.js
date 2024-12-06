@@ -14,10 +14,8 @@ require('dotenv').config();
 console.log("Setting up connection")
 const { MONGO_USER, MONGO_PASSWORD } = process.env;
 
-const mongoURI = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@mongo:27017/expense-tracker`;
+const mongoURI = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@mongo:27017`;
 const app = express();
-
-app.set('trust proxy', 2);
 
 // Middleware order is important!
 app.use(express.json());
