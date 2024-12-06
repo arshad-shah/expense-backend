@@ -138,15 +138,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch(err => {
-  console.error('MongoDB connection error:', err);
-});
+const uri = process.env.MONGODB_URI;
+try {
+  // Parse the existing URI to encode the password
+  const urlParts = new URL(uri);
+  const userPass = urlParts.username + ':' + encodeURIComponent(urlParts.password);
+  const safeUri = uri.replace(`${urlParts.username}:${urlParts.password}`, userPass);
+
+  mongoose.connect(safeUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }).then(() => {
+    console.log('Connected to MongoDB');
+  }).catch(err => {
+    console.error('MongoDB connection error:', err);
+  });
+} catch (err) {
+  console.error('Error parsing MongoDB URI:', err);
+}
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
