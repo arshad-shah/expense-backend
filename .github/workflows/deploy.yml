@@ -22,7 +22,7 @@ jobs:
       - name: Build and Push Docker images
         env:
           REGISTRY: registry.digitalocean.com
-          REPOSITORY: expense-tracker
+          REPOSITORY: test-apps
         run: |
           # Build and push API image
           docker build \
@@ -65,6 +65,8 @@ jobs:
         run: |
           ssh root@${{ secrets.DO_HOST }} << ENDSSH
             cd /opt/expense-tracker
+
+
             
             # Login to DO registry
             doctl registry login --expiry-seconds 600
