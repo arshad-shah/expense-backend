@@ -28,9 +28,8 @@ services:
     image: mongo:latest
     volumes:
       - mongodb_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    env_file:
+      - .env.production
     expose:
       - "27017"
     healthcheck:

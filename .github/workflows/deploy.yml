@@ -58,8 +58,6 @@ jobs:
           scp .env.production root@${{ secrets.DO_HOST }}:/opt/expense-tracker/
 
       - name: Deploy to DigitalOcean
-        env: 
-          DO_REGISTRY_TOKEN: ${{ secrets.DO_REGISTRY_TOKEN }}
         run: |
           ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
             cd /opt/expense-tracker
