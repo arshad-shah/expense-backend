@@ -30,8 +30,6 @@ jobs:
           EOF
           
       - name: Build and Push Docker images
-        env:
-          REGISTRY: ${{ secrets.DO_REGISTRY }}
         run: |
           # Build API image with build args from env file
           docker build \
@@ -39,10 +37,10 @@ jobs:
             --build-arg MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
             --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
             --build-arg FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
-            -t $(echo $REGISTRY)/expense-api:latest \
+            -t $(echo ${{ secrets.DO_REGISTRY }})/expense-api:latest \
             .
           
-          docker push $(echo $REGISTRY)/expense-api:latest
+          docker push $(echo ${{ secrets.DO_REGISTRY }})/expense-api:latest
 
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
@@ -57,6 +55,10 @@ jobs:
         run: |
           scp .env.production root@${{ secrets.DO_HOST }}:/opt/expense-tracker/
 
+      - name: Copy compose file to server
+        run: |
+          scp docker-compose.yml root@${{ secrets.DO_HOST }}:/opt/expense-tracker/
+          
       - name: Deploy to DigitalOcean
         run: |
           ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
