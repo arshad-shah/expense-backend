@@ -2,9 +2,11 @@ version: '3.8'
 
 services:
   app:
-    image: registry.digitalocean.com/expense-tracker/expense-api:latest
+    image: ${REGISTRY}/expense-tracker/expense-api:latest
     ports:
       - "4000:4000"
+    env_file:
+      - .env.production
     depends_on:
       mongo:
         condition: service_healthy
@@ -23,12 +25,11 @@ services:
         max-file: "3"
 
   mongo:
-    image: registry.digitalocean.com/expense-tracker/mongo:latest
+    image: ${REGISTRY}/expense-tracker/mongo:latest
     volumes:
       - mongodb_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USER }}
-      - MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+    env_file:
+      - .env.production
     expose:
       - "27017"
     healthcheck:
