@@ -68,15 +68,15 @@ jobs:
             
             echo "Take down current system"
             # Stop and remove existing containers
-            docker-compose down
+            REGISTRY=${{ secrets.DO_REGISTRY }} docker-compose down
             
             echo "pull new images"
             # Pull latest images
-            docker-compose pull
+            REGISTRY=${{ secrets.DO_REGISTRY }} docker-compose pull
             
             echo "start new system"
             # Start containers with env file
-            docker-compose up -d
+            REGISTRY=${{ secrets.DO_REGISTRY }} docker-compose up -d
             
             echo "cleanup"
             # Clean up
