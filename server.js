@@ -11,6 +11,10 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 require('dotenv').config();
 
+console.log("Setting up connection")
+const { MONGO_USER, MONGO_PASSWORD } = process.env;
+
+const mongoURI = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@mongo:27017/expense-tracker`;
 const app = express();
 
 app.set('trust proxy', 2);
@@ -137,18 +141,8 @@ app.use((err, req, res, next) => {
     error: 'Something broke!'
   });
 });
-
-const uri = process.env.MONGODB_URI;
 try {
-  // Parse the existing URI to encode the password
-  const urlParts = new URL(uri);
-  const userPass = urlParts.username + ':' + encodeURIComponent(urlParts.password);
-  const safeUri = uri.replace(`${urlParts.username}:${urlParts.password}`, userPass);
-
-  mongoose.connect(safeUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  }).then(() => {
+  mongoose.connect(mongoURI).then(() => {
     console.log('Connected to MongoDB');
   }).catch(err => {
     console.error('MongoDB connection error:', err);
