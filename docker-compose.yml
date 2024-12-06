@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: ${REGISTRY}/expense-tracker/expense-api:latest
+    image: ${REGISTRY}/expense-api:latest
     ports:
       - "4000:4000"
     env_file:
@@ -25,11 +25,12 @@ services:
         max-file: "3"
 
   mongo:
-    image: ${REGISTRY}/expense-tracker/mongo:latest
+    image: mongo:latest
     volumes:
       - mongodb_data:/data/db
-    env_file:
-      - .env.production
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     expose:
       - "27017"
     healthcheck:
@@ -40,7 +41,7 @@ services:
     restart: unless-stopped
     networks:
       - app_network
-    command: ["--auth", "--bind_ip", "localhost,mongo"]
+    command: ["--auth", "--bind_ip_all"]
     logging:
       driver: "json-file"
       options:
