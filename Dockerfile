@@ -16,6 +16,10 @@ RUN pnpm install
 # Bundle app source
 COPY . .
 
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget -qO- http://localhost:4000/health || exit 1
+
 # Expose port
 EXPOSE 4000
 

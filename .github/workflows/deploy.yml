@@ -20,19 +20,65 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.DO_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Create env file
+        run: |
+          cat << EOF > .env
+          MONGO_USER=${{ secrets.MONGO_USER }}
+          MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+
+      - name: Copy env file to server
+        run: scp .env root@${{ secrets.DO_HOST }}:/opt/expense-tracker/.env
+
+      - name: Create MongoDB init script
+        run: |
+          cat << EOF > mongo-init.js
+          db.createUser({
+            user: '${{ secrets.MONGO_USER }}',
+            pwd: '${{ secrets.MONGO_PASSWORD }}',
+            roles: [
+              {
+                role: 'readWrite',
+                db: 'expense-tracker'
+              }
+            ]
+          });
+
+          db = db.getSiblingDB('expense-tracker');
+          db.createCollection('users');
+          db.createCollection('expenses');
+
+          db.users.createIndex({ "email": 1 }, { unique: true });
+          db.expenses.createIndex({ "userId": 1 });
+          EOF
+
+      - name: Copy MongoDB init script to server
+        run: scp mongo-init.js root@${{ secrets.DO_HOST }}:/opt/expense-tracker/mongo-init.js
+
       - name: Deploy to DigitalOcean
         run: |
           ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
             cd /opt/expense-tracker
             git pull origin master
+            
+            # Set correct permissions for sensitive files
+            chmod 600 .env
+            chmod 644 mongo-init.js
+            
+            # Stop and remove existing containers
             docker-compose down
+            
+            # Build and start containers
             docker-compose build --no-cache
             docker-compose up -d
+            
+            # Clean up unused images
             docker system prune -f
             
             # Wait for application to be ready
             echo "Waiting for application to start..."
-            sleep 10
+            sleep 20
             
             # Check if application is running
             if curl -f http://localhost:4000/health; then
@@ -41,4 +87,7 @@ jobs:
               echo "Deployment failed!"
               exit 1
             fi
+            
+            # Additional security: Remove sensitive files after container is up
+            rm mongo-init.js
           ENDSSH
