@@ -60,17 +60,23 @@ jobs:
       - name: Deploy to DigitalOcean
         run: |
           ssh root@${{ secrets.DO_HOST }} << 'ENDSSH'
+
+            echo "Changing dir to correct place..."
             cd /opt/expense-tracker
             
+            echo "Take down current system"
             # Stop and remove existing containers
             docker-compose down
             
+            echo "pull new images"
             # Pull latest images
             docker-compose pull
             
+            echo "start new system"
             # Start containers with env file
             docker-compose up -d
             
+            echo "cleanup"
             # Clean up
             docker system prune -f
             
