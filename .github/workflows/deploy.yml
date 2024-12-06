@@ -68,15 +68,15 @@ jobs:
             
             echo "Take down current system"
             # Stop and remove existing containers
-            REGISTRY=${{ secrets.DO_REGISTRY }} docker-compose down
+            REGISTRY=${{ secrets.DO_REGISTRY }} MONGO_USER=${{ secrets.MONGO_USER }} MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} docker-compose down
             
             echo "pull new images"
             # Pull latest images
-            REGISTRY=${{ secrets.DO_REGISTRY }} docker-compose pull
+            REGISTRY=${{ secrets.DO_REGISTRY }} MONGO_USER=${{ secrets.MONGO_USER }} MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} docker-compose pull
             
             echo "start new system"
             # Start containers with env file
-            REGISTRY=${{ secrets.DO_REGISTRY }} docker-compose up -d
+            REGISTRY=${{ secrets.DO_REGISTRY }} MONGO_USER=${{ secrets.MONGO_USER }} MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} docker-compose up -d
             
             echo "cleanup"
             # Clean up

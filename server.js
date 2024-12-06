@@ -44,7 +44,7 @@ app.use(limiter);
 // Stricter rate limit for auth routes
 const authLimiter = rateLimit({
   windowMs: 60 * 5000, // 5 minutes
-  max: 5, // limit each IP to 5 login attempts per hour
+  max: 5, // limit each IP to 5 login attempts per 5 minutes
   message: 'Too many login attempts, please try again later.'
 });
 
